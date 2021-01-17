@@ -1,12 +1,23 @@
 # Openssl-C-
-Client Server codes for TCP connection, TLS connection and SHA Hash Code
+This project does following - 
+1. Creates a server - client connect over TCP and exchange messages.
+    server.cpp - server code
+    client.cpp - client code
+    
+2. Creates a TLS Connection between a server and a client.
+    tlsserver.cpp - server code
+    tlsclient.cpp - client code
+    
+3. Sends a number from client to server over TLS connection. The server returns it hash code to the client.
+    hashserver.cpp - server code
+    hashclient.cpp - client code
 
-This project conatins - 
-server and client code for TCP connection - server.cpp and client.cpp
-server and client code for connection over TLS - tlsserver.cpp and tlsclient.cpp
-server and client code where client sends a number to server and server returns the number's sha256 code - hashserver.cpp and hashclient.cpp
+Operating System - 
+NAME="Ubuntu"
+VERSION="18.04.5 LTS (Bionic Beaver)"
 
-For this project - 
-Same system was used as server and client.
-A self signed certificate was created for tls connection.
+OpenSSL Version - 1.1.1
 
+Server and Client are on same machine.
+
+To establish TLS connection, self signed certificate was created using - openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 1 -nodes - key and crt creation
