@@ -13,6 +13,8 @@ int main(int argc, char const *argv[])
     struct sockaddr_in serv_addr; 
     char hello[] = "Hello from client"; 
     char buffer[1024] = {0}; 
+    
+    // Create a socket
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
     { 
         cout << "\n Socket creation error \n"; 
@@ -28,16 +30,20 @@ int main(int argc, char const *argv[])
         cout << "\nInvalid address/ Address not supported \n"; 
         return -1; 
     } 
-   
+  
+    // Connect to server 
     if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) 
     { 
         cout << "\nConnection Failed \n"; 
         return -1; 
     } 
+
+    // Send Message
     send(sock , hello , strlen(hello) , 0 ); 
     cout << "Hello message sent\n"; 
+
+    // Receive server's message
     valread = read( sock , buffer, 1024); 
-//    cout << "%s\n",buffer ; 
     
     for(int i=0; i<strlen(buffer); i++){
             cout << buffer[i];

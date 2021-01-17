@@ -12,24 +12,8 @@
 
 using namespace std;
 
-const char*  sha256( const char * str )
-{
-    unsigned char hash[SHA256_DIGEST_LENGTH];
-    SHA256_CTX sha256;
-    SHA256_Init(&sha256);
-    SHA256_Update(&sha256, str, strlen(str));
-
-    SHA256_Final(hash, &sha256);
-
-    stringstream ss;
-    for(int i = 0; i < SHA256_DIGEST_LENGTH; i++)
-    {
-        ss << hex << setw(2) << setfill('0') << (int)hash[i];
-    }
-
-    return ss.str().c_str();
-}
-
+// Server side code to establish a TLS connection.
+// It will receive a number from client, generate its hash code and send the hash code to server.
 
 int main(int argc, char **argv)
 {
@@ -39,27 +23,29 @@ int main(int argc, char **argv)
     char buf[1024];
     int bytes;
 
+    // Initialise OpenSSL
     SSL_load_error_strings();	
     OpenSSL_add_ssl_algorithms();
 
+    // Define protocol for connection and initialise context
     method = TLS_method();
     ctx = SSL_CTX_new(method);
-
     SSL_CTX_set_ecdh_auto(ctx, 1);
 
-    /* Set the key and cert */
+    // Set the cert
     if (SSL_CTX_use_certificate_file(ctx, "cert.pem", SSL_FILETYPE_PEM) <= 0) {
         ERR_print_errors_fp(stderr);
 	exit(EXIT_FAILURE);
     }
 
+    // Set the key
     if (SSL_CTX_use_PrivateKey_file(ctx, "key.pem", SSL_FILETYPE_PEM) <= 0 ) {
         ERR_print_errors_fp(stderr);
 	exit(EXIT_FAILURE);
     }
 
 
-    /* create socket */
+    // Create and bind socket
     struct sockaddr_in addr;
 
     addr.sin_family = AF_INET;
@@ -82,11 +68,14 @@ int main(int argc, char **argv)
 	exit(EXIT_FAILURE);
     }
 
+    // Serve the different client threads.
+    // For each connecting client, a new ssl object will be created.
+    // If TLS cconnection is not successful, an error message will be printed to console.
+    // Else hash code will be calculated of reveived number.
     while(1) {
         struct sockaddr_in addr;
         uint len = sizeof(addr);
         SSL *ssl;
-        const char reply[] = "test\n";
 
         int client = accept(sock, (struct sockaddr*)&addr, &len);
         if (client < 0) {
@@ -102,8 +91,25 @@ int main(int argc, char **argv)
         }
         else {
 		bytes = SSL_read(ssl, buf, sizeof(buf));
-		const char *out = sha256(buf); 
-                SSL_write(ssl, out, strlen(out));
+
+		// Create hash code of received number
+		unsigned char hash[SHA256_DIGEST_LENGTH];
+    		SHA256_CTX sha256;
+    		SHA256_Init(&sha256);
+    		SHA256_Update(&sha256, buf, strlen(buf));
+
+    		SHA256_Final(hash, &sha256);
+
+    		stringstream ss;
+    		for(int i = 0; i < SHA256_DIGEST_LENGTH; i++){
+        		ss << hex << setw(2) << setfill('0') << (int)hash[i];
+    		}
+
+    		string tmp = ss.str();
+		const char* out = tmp.c_str();
+
+		// Send hashcode to the client
+		SSL_write(ssl, out, strlen(out));
         }
 
 

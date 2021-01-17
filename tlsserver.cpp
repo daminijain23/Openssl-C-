@@ -9,33 +9,35 @@
 #define PORT 8080
 
 
-int main(int argc, char **argv)
-{
+// Server side code to establish a TLS connection
+
+int main(){
     int sock;
     SSL_CTX *ctx;
     const SSL_METHOD *method;
 
+    // Initialise OpenSSL
     SSL_load_error_strings();	
     OpenSSL_add_ssl_algorithms();
 
-    method = TLS_method();
+    // Define protocol for connection and initialise context
+    method = TLS_server_method();
     ctx = SSL_CTX_new(method);
-
     SSL_CTX_set_ecdh_auto(ctx, 1);
 
-    /* Set the key and cert */
+    // Set the cert
     if (SSL_CTX_use_certificate_file(ctx, "cert.pem", SSL_FILETYPE_PEM) <= 0) {
         ERR_print_errors_fp(stderr);
 	exit(EXIT_FAILURE);
     }
 
+    // Set the key
     if (SSL_CTX_use_PrivateKey_file(ctx, "key.pem", SSL_FILETYPE_PEM) <= 0 ) {
         ERR_print_errors_fp(stderr);
 	exit(EXIT_FAILURE);
     }
 
-
-    /* create socket */
+    // Create and bind socket
     struct sockaddr_in addr;
 
     addr.sin_family = AF_INET;
@@ -58,6 +60,9 @@ int main(int argc, char **argv)
 	exit(EXIT_FAILURE);
     }
 
+    // Serve the different client threads.
+    // For each connecting client, a new ssl object will be created.
+    // If TLS cconnection is not successful, an error message will be printed to console.
     while(1) {
         struct sockaddr_in addr;
         uint len = sizeof(addr);
@@ -75,9 +80,6 @@ int main(int argc, char **argv)
 
         if (SSL_accept(ssl) <= 0) {
             ERR_print_errors_fp(stderr);
-        }
-        else {
-            SSL_write(ssl, reply, strlen(reply));
         }
 
         SSL_shutdown(ssl);
